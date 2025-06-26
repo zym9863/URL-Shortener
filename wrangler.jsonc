@@ -2,19 +2,14 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "url-shortener",
   "main": "src/index.ts",
-  "compatibility_date": "2025-06-26"
-  // "compatibility_flags": [
-  //   "nodejs_compat"
-  // ],
-  // "vars": {
-  //   "MY_VAR": "my-variable"
-  // },
-  // "kv_namespaces": [
-  //   {
-  //     "binding": "MY_KV_NAMESPACE",
-  //     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-  //   }
-  // ],
+  "compatibility_date": "2025-06-26",
+  "kv_namespaces": [
+    {
+      "binding": "URL_STORE",
+      "preview_id": "url-shortener-preview",
+      "id": "url-shortener-production"
+    }
+  ],
   // "r2_buckets": [
   //   {
   //     "binding": "MY_BUCKET",
