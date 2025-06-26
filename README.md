@@ -1,3 +1,5 @@
+[English Version (README_EN.md)](./README_EN.md)
+
 # URL 缩短服务
 
 基于 Hono 和 Cloudflare Workers 的高性能 URL 缩短服务。
