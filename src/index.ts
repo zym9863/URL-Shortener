@@ -25,7 +25,7 @@ const app = new Hono<{ Bindings: Bindings }>()
 // 启用 CORS
 app.use('*', cors())
 
-// 首页 - 返回简单的 HTML 界面
+// 首页 - 返回现代化的 HTML 界面
 app.get('/', (c) => {
   const html = `
 <!DOCTYPE html>
@@ -33,107 +33,432 @@ app.get('/', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>URL 缩短服务</title>
+    <title>URL 缩短服务 - 简洁、安全、高效</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --primary-light: #dbeafe;
+            --secondary-color: #f8fafc;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+            --success-bg: #ecfdf5;
+            --error-color: #ef4444;
+            --error-bg: #fef2f2;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --border-radius: 8px;
+            --border-radius-lg: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 600px;
-            margin: 50px auto;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             padding: 20px;
-            background: #f5f5f5;
+            line-height: 1.6;
         }
+
         .container {
+            max-width: 480px;
+            margin: 0 auto;
             background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            animation: slideUp 0.6s ease-out;
         }
-        h1 { color: #333; text-align: center; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="url"], input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        button {
-            background: #007bff;
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
             color: white;
-            padding: 12px 24px;
+            padding: 32px 24px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.025em;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 15px;
+            font-weight: 400;
+        }
+
+        .content {
+            padding: 32px 24px;
+        }
+
+        .form-section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        input[type="url"], 
+        input[type="text"], 
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        input[type="url"]:focus, 
+        input[type="text"]:focus, 
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            padding: 14px 24px;
             border: none;
-            border-radius: 5px;
+            border-radius: var(--border-radius);
             cursor: pointer;
             font-size: 16px;
+            font-weight: 600;
             width: 100%;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
         }
-        button:hover { background: #0056b3; }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: var(--text-secondary);
+            flex: 1;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .btn-danger {
+            background: var(--error-color);
+            flex: 1;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+        }
+
         .result {
-            margin-top: 20px;
-            padding: 15px;
-            background: #e8f5e8;
-            border-radius: 5px;
+            margin-top: 24px;
+            padding: 20px;
+            border-radius: var(--border-radius);
             display: none;
+            animation: fadeIn 0.3s ease-out;
         }
-        .error {
-            background: #f8d7da;
-            color: #721c24;
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .success {
-            background: #d4edda;
-            color: #155724;
+
+        .result.success {
+            background: var(--success-bg);
+            border: 1px solid #a7f3d0;
+            color: #065f46;
         }
+
+        .result.error {
+            background: var(--error-bg);
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+
+        .result h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .result p {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
         .short-url {
-            font-weight: bold;
+            font-weight: 600;
             word-break: break-all;
+            background: rgba(59, 130, 246, 0.1);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+        }
+
+        .copy-btn {
+            background: var(--success-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: #059669;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 32px 0;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 24px;
+            padding: 24px;
+            background: var(--secondary-color);
+            border-radius: var(--border-radius);
+        }
+
+        .feature {
+            text-align: center;
+            padding: 16px 8px;
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .feature-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .feature-desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                margin: 10px;
+                border-radius: var(--border-radius);
+            }
+
+            .header {
+                padding: 24px 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .content {
+                padding: 24px 20px;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔗 URL 缩短服务</h1>
-        <form id="shortenForm">
-            <div class="form-group">
-                <label for="originalUrl">原始 URL:</label>
-                <input type="url" id="originalUrl" placeholder="https://example.com/very/long/url" required>
+        <div class="header">
+            <h1>🔗 URL 缩短服务</h1>
+            <p>简洁、安全、高效的链接管理工具</p>
+        </div>
+        
+        <div class="content">
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>📎</span> 创建短链
+                </h2>
+                <form id="shortenForm">
+                    <div class="form-group">
+                        <label for="originalUrl">原始 URL</label>
+                        <input type="url" id="originalUrl" placeholder="https://example.com/very/long/url" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customCode">自定义短码 (可选)</label>
+                        <input type="text" id="customCode" placeholder="留空自动生成" maxlength="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="expiresInDays">过期天数 (可选)</label>
+                        <input type="number" id="expiresInDays" placeholder="留空永不过期" min="1" max="365">
+                    </div>
+                    <button type="submit" class="btn" id="shortenBtn">生成短链</button>
+                </form>
+                <div id="result" class="result"></div>
             </div>
-            <div class="form-group">
-                <label for="customCode">自定义短码 (可选):</label>
-                <input type="text" id="customCode" placeholder="留空自动生成" maxlength="10">
-            </div>
-            <div class="form-group">
-                <label for="expiresInDays">过期天数 (可选):</label>
-                <input type="number" id="expiresInDays" placeholder="留空永不过期" min="1" max="365">
-            </div>
-            <button type="submit">生成短链</button>
-        </form>
-        <div id="result" class="result"></div>
 
-        <hr style="margin: 40px 0; border: none; border-top: 1px solid #ddd;">
+            <div class="divider"></div>
 
-        <h2>管理短链</h2>
-        <form id="manageForm">
-            <div class="form-group">
-                <label for="manageCode">短码:</label>
-                <input type="text" id="manageCode" placeholder="输入要查询的短码" required>
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>📊</span> 管理短链
+                </h2>
+                <form id="manageForm">
+                    <div class="form-group">
+                        <label for="manageCode">短码</label>
+                        <input type="text" id="manageCode" placeholder="输入要查询的短码" required>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-secondary" onclick="getStats()">查询统计</button>
+                        <button type="button" class="btn btn-danger" onclick="deleteShortUrl()">删除短链</button>
+                    </div>
+                </form>
+                <div id="manageResult" class="result"></div>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button type="button" onclick="getStats()">查询统计</button>
-                <button type="button" onclick="deleteShortUrl()" style="background: #dc3545;">删除短链</button>
+
+            <div class="feature-grid">
+                <div class="feature">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-title">极速生成</div>
+                    <div class="feature-desc">秒级生成短链</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📈</div>
+                    <div class="feature-title">数据统计</div>
+                    <div class="feature-desc">详细访问分析</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🛡️</div>
+                    <div class="feature-title">安全可靠</div>
+                    <div class="feature-desc">企业级安全</div>
+                </div>
             </div>
-        </form>
-        <div id="manageResult" class="result"></div>
+        </div>
     </div>
 
     <script>
+        // 添加加载状态管理
+        function setLoading(elementId, isLoading) {
+            const element = document.getElementById(elementId);
+            if (isLoading) {
+                element.classList.add('loading');
+                element.disabled = true;
+            } else {
+                element.classList.remove('loading');
+                element.disabled = false;
+            }
+        }
+
+        // 显示结果的通用函数
+        function showResult(resultId, isSuccess, title, content) {
+            const resultDiv = document.getElementById(resultId);
+            resultDiv.className = \`result \${isSuccess ? 'success' : 'error'}\`;
+            resultDiv.innerHTML = \`<h3>\${title}</h3>\${content}\`;
+            resultDiv.style.display = 'block';
+        }
+
         document.getElementById('shortenForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const originalUrl = document.getElementById('originalUrl').value;
             const customCode = document.getElementById('customCode').value;
             const expiresInDays = document.getElementById('expiresInDays').value;
-            const resultDiv = document.getElementById('result');
+
+            setLoading('shortenBtn', true);
 
             try {
                 const requestBody = {
@@ -153,39 +478,38 @@ app.get('/', (c) => {
                 const data = await response.json();
 
                 if (response.ok) {
-                    resultDiv.className = 'result success';
+                    const shortUrl = \`\${window.location.origin}/\${data.shortCode}\`;
                     let expiryInfo = data.expiresAt ?
-                        \`<p>过期时间: \${new Date(data.expiresAt).toLocaleString('zh-CN')}</p>\` :
-                        '<p>永不过期</p>';
+                        \`<p><strong>过期时间:</strong> \${new Date(data.expiresAt).toLocaleString('zh-CN')}</p>\` :
+                        '<p><strong>过期时间:</strong> 永不过期</p>';
 
-                    resultDiv.innerHTML = \`
-                        <h3>短链生成成功！</h3>
-                        <p>短链: <span class="short-url">\${window.location.origin}/\${data.shortCode}</span></p>
-                        <p>原始 URL: \${data.originalUrl}</p>
+                    const content = \`
+                        <p><strong>短链:</strong></p>
+                        <div class="short-url">\${shortUrl}</div>
+                        <button class="copy-btn" onclick="copyToClipboard('\${shortUrl}')">📋 复制短链</button>
+                        <p style="margin-top: 16px;"><strong>原始 URL:</strong> \${data.originalUrl}</p>
                         \${expiryInfo}
-                        <button onclick="copyToClipboard('\${window.location.origin}/\${data.shortCode}')">复制短链</button>
                     \`;
-                } else {
-                    resultDiv.className = 'result error';
-                    resultDiv.innerHTML = \`<h3>错误</h3><p>\${data.error}</p>\`;
-                }
 
-                resultDiv.style.display = 'block';
+                    showResult('result', true, '🎉 短链生成成功！', content);
+                    
+                    // 清空表单
+                    document.getElementById('shortenForm').reset();
+                } else {
+                    showResult('result', false, '❌ 生成失败', \`<p>\${data.error}</p>\`);
+                }
             } catch (error) {
-                resultDiv.className = 'result error';
-                resultDiv.innerHTML = \`<h3>错误</h3><p>网络请求失败</p>\`;
-                resultDiv.style.display = 'block';
+                showResult('result', false, '❌ 网络错误', '<p>请检查网络连接后重试</p>');
+            } finally {
+                setLoading('shortenBtn', false);
             }
         });
 
         async function getStats() {
-            const shortCode = document.getElementById('manageCode').value;
-            const resultDiv = document.getElementById('manageResult');
+            const shortCode = document.getElementById('manageCode').value.trim();
 
             if (!shortCode) {
-                resultDiv.className = 'result error';
-                resultDiv.innerHTML = '<h3>错误</h3><p>请输入短码</p>';
-                resultDiv.style.display = 'block';
+                showResult('manageResult', false, '❌ 输入错误', '<p>请输入短码</p>');
                 return;
             }
 
@@ -194,48 +518,40 @@ app.get('/', (c) => {
                 const data = await response.json();
 
                 if (response.ok) {
-                    resultDiv.className = 'result success';
                     let expiryInfo = data.expiresAt ?
-                        \`<p>过期时间: \${new Date(data.expiresAt).toLocaleString('zh-CN')}</p>\` :
-                        '<p>永不过期</p>';
+                        \`<p><strong>过期时间:</strong> \${new Date(data.expiresAt).toLocaleString('zh-CN')}</p>\` :
+                        '<p><strong>过期时间:</strong> 永不过期</p>';
                     let lastAccessInfo = data.lastAccessed ?
-                        \`<p>最后访问: \${new Date(data.lastAccessed).toLocaleString('zh-CN')}</p>\` :
-                        '<p>从未访问</p>';
+                        \`<p><strong>最后访问:</strong> \${new Date(data.lastAccessed).toLocaleString('zh-CN')}</p>\` :
+                        '<p><strong>最后访问:</strong> 从未访问</p>';
 
-                    resultDiv.innerHTML = \`
-                        <h3>短链统计信息</h3>
-                        <p>短码: \${data.shortCode}</p>
-                        <p>原始 URL: \${data.originalUrl}</p>
-                        <p>创建时间: \${new Date(data.createdAt).toLocaleString('zh-CN')}</p>
+                    const content = \`
+                        <p><strong>短码:</strong> \${data.shortCode}</p>
+                        <p><strong>原始 URL:</strong> \${data.originalUrl}</p>
+                        <p><strong>创建时间:</strong> \${new Date(data.createdAt).toLocaleString('zh-CN')}</p>
                         \${expiryInfo}
-                        <p>访问次数: \${data.clickCount}</p>
+                        <p><strong>访问次数:</strong> \${data.clickCount} 次</p>
                         \${lastAccessInfo}
                     \`;
-                } else {
-                    resultDiv.className = 'result error';
-                    resultDiv.innerHTML = \`<h3>错误</h3><p>\${data.error}</p>\`;
-                }
 
-                resultDiv.style.display = 'block';
+                    showResult('manageResult', true, '📊 统计信息', content);
+                } else {
+                    showResult('manageResult', false, '❌ 查询失败', \`<p>\${data.error}</p>\`);
+                }
             } catch (error) {
-                resultDiv.className = 'result error';
-                resultDiv.innerHTML = '<h3>错误</h3><p>网络请求失败</p>';
-                resultDiv.style.display = 'block';
+                showResult('manageResult', false, '❌ 网络错误', '<p>请检查网络连接后重试</p>');
             }
         }
 
         async function deleteShortUrl() {
-            const shortCode = document.getElementById('manageCode').value;
-            const resultDiv = document.getElementById('manageResult');
+            const shortCode = document.getElementById('manageCode').value.trim();
 
             if (!shortCode) {
-                resultDiv.className = 'result error';
-                resultDiv.innerHTML = '<h3>错误</h3><p>请输入短码</p>';
-                resultDiv.style.display = 'block';
+                showResult('manageResult', false, '❌ 输入错误', '<p>请输入短码</p>');
                 return;
             }
 
-            if (!confirm('确定要删除这个短链吗？此操作不可撤销。')) {
+            if (!confirm('⚠️ 确定要删除这个短链吗？\\n\\n此操作不可撤销，删除后该短链将无法访问。')) {
                 return;
             }
 
@@ -246,26 +562,79 @@ app.get('/', (c) => {
                 const data = await response.json();
 
                 if (response.ok) {
-                    resultDiv.className = 'result success';
-                    resultDiv.innerHTML = \`<h3>成功</h3><p>\${data.message}</p>\`;
+                    showResult('manageResult', true, '✅ 删除成功', \`<p>\${data.message}</p>\`);
+                    document.getElementById('manageCode').value = '';
                 } else {
-                    resultDiv.className = 'result error';
-                    resultDiv.innerHTML = \`<h3>错误</h3><p>\${data.error}</p>\`;
+                    showResult('manageResult', false, '❌ 删除失败', \`<p>\${data.error}</p>\`);
                 }
-
-                resultDiv.style.display = 'block';
             } catch (error) {
-                resultDiv.className = 'result error';
-                resultDiv.innerHTML = '<h3>错误</h3><p>网络请求失败</p>';
-                resultDiv.style.display = 'block';
+                showResult('manageResult', false, '❌ 网络错误', '<p>请检查网络连接后重试</p>');
             }
         }
 
         function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert('短链已复制到剪贴板！');
-            });
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    // 创建复制成功的视觉反馈
+                    const event = document.querySelector('.copy-btn');
+                    const originalText = event.textContent;
+                    event.textContent = '✅ 已复制';
+                    event.style.background = '#10b981';
+                    
+                    setTimeout(() => {
+                        event.textContent = originalText;
+                        event.style.background = '';
+                    }, 2000);
+                }).catch(() => {
+                    fallbackCopyTextToClipboard(text);
+                });
+            } else {
+                fallbackCopyTextToClipboard(text);
+            }
         }
+
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            textArea.style.top = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                alert('📋 短链已复制到剪贴板！');
+            } catch (err) {
+                alert('❌ 复制失败，请手动复制');
+            }
+            
+            document.body.removeChild(textArea);
+        }
+
+        // 添加键盘快捷键支持
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                if (document.activeElement.closest('#shortenForm')) {
+                    document.getElementById('shortenForm').dispatchEvent(new Event('submit'));
+                }
+            }
+        });
+
+        // 添加表单验证增强
+        document.getElementById('originalUrl').addEventListener('blur', function() {
+            const url = this.value.trim();
+            if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+                this.value = 'https://' + url;
+            }
+        });
+
+        // 添加输入实时验证
+        document.getElementById('customCode').addEventListener('input', function() {
+            this.value = this.value.replace(/[^a-zA-Z0-9-_]/g, '');
+        });
     </script>
 </body>
 </html>
