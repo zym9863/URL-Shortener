@@ -22,8 +22,30 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-// 启用 CORS
-app.use('*', cors())
+// 启用 CORS 
+app.use('*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization']
+}))
+
+// 健康检查端点
+app.get('/health', (c) => {
+  return c.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    service: 'URL Shortener'
+  })
+})
+
+// 全局错误处理
+app.onError((err, c) => {
+  return c.json({
+    error: '服务器内部错误',
+    message: err.message,
+    timestamp: new Date().toISOString()
+  }, 500)
+})
 
 // 首页 - 返回现代化的 HTML 界面
 app.get('/', (c) => {
@@ -432,8 +454,8 @@ app.get('/', (c) => {
 
     <script>
         // 添加加载状态管理
-        function setLoading(elementId, isLoading) {
-            const element = document.getElementById(elementId);
+        function setLoading(element, isLoading) {
+            if (!element) return;
             if (isLoading) {
                 element.classList.add('loading');
                 element.disabled = true;
@@ -458,7 +480,8 @@ app.get('/', (c) => {
             const customCode = document.getElementById('customCode').value;
             const expiresInDays = document.getElementById('expiresInDays').value;
 
-            setLoading('shortenBtn', true);
+            const shortenBtn = document.getElementById('shortenBtn');
+            setLoading(shortenBtn, true);
 
             try {
                 const requestBody = {
@@ -501,7 +524,7 @@ app.get('/', (c) => {
             } catch (error) {
                 showResult('result', false, '❌ 网络错误', '<p>请检查网络连接后重试</p>');
             } finally {
-                setLoading('shortenBtn', false);
+                setLoading(shortenBtn, false);
             }
         });
 
@@ -513,33 +536,98 @@ app.get('/', (c) => {
                 return;
             }
 
-            try {
-                const response = await fetch(\`/api/stats/\${shortCode}\`);
-                const data = await response.json();
+            // 验证短码格式
+            if (shortCode.length < 3 || shortCode.length > 10) {
+                showResult('manageResult', false, '❌ 格式错误', '<p>短码长度必须在3-10位之间</p>');
+                return;
+            }
 
-                if (response.ok) {
-                    let expiryInfo = data.expiresAt ?
-                        \`<p><strong>过期时间:</strong> \${new Date(data.expiresAt).toLocaleString('zh-CN')}</p>\` :
-                        '<p><strong>过期时间:</strong> 永不过期</p>';
-                    let lastAccessInfo = data.lastAccessed ?
-                        \`<p><strong>最后访问:</strong> \${new Date(data.lastAccessed).toLocaleString('zh-CN')}</p>\` :
-                        '<p><strong>最后访问:</strong> 从未访问</p>';
+            if (!/^[a-zA-Z0-9]+$/.test(shortCode)) {
+                showResult('manageResult', false, '❌ 格式错误', '<p>短码只能包含字母和数字</p>');
+                return;
+            }
 
-                    const content = \`
-                        <p><strong>短码:</strong> \${data.shortCode}</p>
-                        <p><strong>原始 URL:</strong> \${data.originalUrl}</p>
-                        <p><strong>创建时间:</strong> \${new Date(data.createdAt).toLocaleString('zh-CN')}</p>
-                        \${expiryInfo}
-                        <p><strong>访问次数:</strong> \${data.clickCount} 次</p>
-                        \${lastAccessInfo}
-                    \`;
+            // 设置按钮加载状态
+            const statsBtn = document.querySelector('.btn-secondary');
+            if (statsBtn) {
+                setLoading(statsBtn, true);
+                statsBtn.textContent = '查询中...';
+            }
 
-                    showResult('manageResult', true, '📊 统计信息', content);
-                } else {
-                    showResult('manageResult', false, '❌ 查询失败', \`<p>\${data.error}</p>\`);
+            let retryCount = 0;
+            const maxRetries = 3;
+
+            async function attemptRequest() {
+                try {
+                    const response = await fetch(\`/api/stats/\${encodeURIComponent(shortCode)}\`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Cache-Control': 'no-cache'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ error: '服务器响应错误' }));
+                        throw new Error(errorData.error || \`HTTP \${response.status}\`);
+                    }
+
+                    const data = await response.json();
+
+                    if (data && typeof data === 'object') {
+                        let expiryInfo = data.expiresAt ?
+                            \`<p><strong>过期时间:</strong> \${new Date(data.expiresAt).toLocaleString('zh-CN')}</p>\` :
+                            '<p><strong>过期时间:</strong> 永不过期</p>';
+                        let lastAccessInfo = data.lastAccessed ?
+                            \`<p><strong>最后访问:</strong> \${new Date(data.lastAccessed).toLocaleString('zh-CN')}</p>\` :
+                            '<p><strong>最后访问:</strong> 从未访问</p>';
+
+                        const content = \`
+                            <p><strong>短码:</strong> \${data.shortCode || shortCode}</p>
+                            <p><strong>原始 URL:</strong> \${data.originalUrl || '未知'}</p>
+                            <p><strong>创建时间:</strong> \${data.createdAt ? new Date(data.createdAt).toLocaleString('zh-CN') : '未知'}</p>
+                            \${expiryInfo}
+                            <p><strong>访问次数:</strong> \${data.clickCount || 0} 次</p>
+                            \${lastAccessInfo}
+                        \`;
+
+                        showResult('manageResult', true, '📊 统计信息', content);
+                    } else {
+                        throw new Error('服务器返回数据格式错误');
+                    }
+
+                } catch (error) {
+                    retryCount++;
+                    
+                    if (retryCount < maxRetries && (error.message.includes('fetch') || error.message.includes('网络'))) {
+                        // 网络错误，尝试重试
+                        setTimeout(() => attemptRequest(), 1000 * retryCount);
+                        return;
+                    }
+                    
+                    let errorMessage = '请检查网络连接后重试';
+                    if (error.message.includes('不存在')) {
+                        errorMessage = '短链不存在，请检查短码是否正确';
+                    } else if (error.message.includes('格式错误') || error.message.includes('长度')) {
+                        errorMessage = error.message;
+                    } else if (error.message.includes('HTTP 500')) {
+                        errorMessage = '服务器内部错误，请稍后重试';
+                    } else if (error.message.includes('HTTP 404')) {
+                        errorMessage = '短链不存在';
+                    }
+
+                    showResult('manageResult', false, '❌ 查询失败', \`<p>\${errorMessage}</p>\`);
                 }
-            } catch (error) {
-                showResult('manageResult', false, '❌ 网络错误', '<p>请检查网络连接后重试</p>');
+            }
+
+            try {
+                await attemptRequest();
+            } finally {
+                // 恢复按钮状态
+                if (statsBtn) {
+                    setLoading(statsBtn, false);
+                    statsBtn.textContent = '查询统计';
+                }
             }
         }
 
@@ -551,24 +639,67 @@ app.get('/', (c) => {
                 return;
             }
 
+            // 验证短码格式
+            if (shortCode.length < 3 || shortCode.length > 10) {
+                showResult('manageResult', false, '❌ 格式错误', '<p>短码长度必须在3-10位之间</p>');
+                return;
+            }
+
+            if (!/^[a-zA-Z0-9]+$/.test(shortCode)) {
+                showResult('manageResult', false, '❌ 格式错误', '<p>短码只能包含字母和数字</p>');
+                return;
+            }
+
             if (!confirm('⚠️ 确定要删除这个短链吗？\\n\\n此操作不可撤销，删除后该短链将无法访问。')) {
                 return;
             }
 
+            // 设置按钮加载状态
+            const deleteBtn = document.querySelector('.btn-danger');
+            if (deleteBtn) {
+                setLoading(deleteBtn, true);
+                deleteBtn.textContent = '删除中...';
+            }
+
             try {
-                const response = await fetch(\`/api/\${shortCode}\`, {
-                    method: 'DELETE'
+                const response = await fetch(\`/api/\${encodeURIComponent(shortCode)}\`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: '服务器响应错误' }));
+                    throw new Error(errorData.error || \`HTTP \${response.status}\`);
+                }
+
                 const data = await response.json();
 
-                if (response.ok) {
+                if (data && data.message) {
                     showResult('manageResult', true, '✅ 删除成功', \`<p>\${data.message}</p>\`);
                     document.getElementById('manageCode').value = '';
                 } else {
-                    showResult('manageResult', false, '❌ 删除失败', \`<p>\${data.error}</p>\`);
+                    throw new Error('删除操作未确认');
                 }
+
             } catch (error) {
-                showResult('manageResult', false, '❌ 网络错误', '<p>请检查网络连接后重试</p>');
+                let errorMessage = '请检查网络连接后重试';
+                if (error.message.includes('不存在')) {
+                    errorMessage = '短链不存在，可能已被删除';
+                } else if (error.message.includes('HTTP 404')) {
+                    errorMessage = '短链不存在';
+                } else if (error.message.includes('HTTP 500')) {
+                    errorMessage = '服务器内部错误，请稍后重试';
+                }
+
+                showResult('manageResult', false, '❌ 删除失败', \`<p>\${errorMessage}</p>\`);
+            } finally {
+                // 恢复按钮状态
+                if (deleteBtn) {
+                    setLoading(deleteBtn, false);
+                    deleteBtn.textContent = '删除短链';
+                }
             }
         }
 
@@ -714,28 +845,56 @@ app.get('/api/stats/:shortCode', async (c) => {
   try {
     const shortCode = c.req.param('shortCode')
 
-    if (!shortCode) {
+    // 验证短码
+    if (!shortCode || typeof shortCode !== 'string' || shortCode.trim() === '') {
       return c.json({ error: '短码不能为空' }, 400)
     }
 
-    const data = await c.env.URL_STORE.get(shortCode)
+    const trimmedShortCode = shortCode.trim()
+    
+    // 验证短码格式
+    if (trimmedShortCode.length < 3 || trimmedShortCode.length > 10) {
+      return c.json({ error: '短码长度必须在3-10位之间' }, 400)
+    }
+
+    // 从 KV 存储中获取数据
+    let data: string | null = null
+    try {
+      data = await c.env.URL_STORE.get(trimmedShortCode)
+    } catch (kvError) {
+      return c.json({ error: 'KV 存储访问失败' }, 500)
+    }
+
     if (!data) {
       return c.json({ error: '短链不存在' }, 404)
     }
 
-    const urlData: UrlData = JSON.parse(data)
+    let urlData: UrlData
+    try {
+      urlData = JSON.parse(data)
+    } catch (parseError) {
+      return c.json({ error: '数据格式错误' }, 500)
+    }
+
+    // 验证数据完整性
+    if (!urlData.shortCode || !urlData.originalUrl) {
+      return c.json({ error: '数据不完整' }, 500)
+    }
 
     return c.json({
       shortCode: urlData.shortCode,
       originalUrl: urlData.originalUrl,
       createdAt: urlData.createdAt,
-      expiresAt: urlData.expiresAt,
-      clickCount: urlData.clickCount,
-      lastAccessed: urlData.lastAccessed
+      expiresAt: urlData.expiresAt || null,
+      clickCount: urlData.clickCount || 0,
+      lastAccessed: urlData.lastAccessed || null
     })
 
   } catch (error) {
-    return c.json({ error: '获取统计信息失败' }, 500)
+    return c.json({ 
+      error: '获取统计信息失败', 
+      details: error instanceof Error ? error.message : '未知错误' 
+    }, 500)
   }
 })
 
@@ -744,21 +903,44 @@ app.delete('/api/:shortCode', async (c) => {
   try {
     const shortCode = c.req.param('shortCode')
 
-    if (!shortCode) {
+    // 验证短码
+    if (!shortCode || typeof shortCode !== 'string' || shortCode.trim() === '') {
       return c.json({ error: '短码不能为空' }, 400)
     }
 
-    const data = await c.env.URL_STORE.get(shortCode)
+    const trimmedShortCode = shortCode.trim()
+    
+    // 验证短码格式
+    if (trimmedShortCode.length < 3 || trimmedShortCode.length > 10) {
+      return c.json({ error: '短码长度必须在3-10位之间' }, 400)
+    }
+
+    // 从 KV 存储中检查是否存在
+    let data: string | null = null
+    try {
+      data = await c.env.URL_STORE.get(trimmedShortCode)
+    } catch (kvError) {
+      return c.json({ error: 'KV 存储访问失败' }, 500)
+    }
+
     if (!data) {
       return c.json({ error: '短链不存在' }, 404)
     }
 
-    await c.env.URL_STORE.delete(shortCode)
+    // 删除短链
+    try {
+      await c.env.URL_STORE.delete(trimmedShortCode)
+    } catch (kvError) {
+      return c.json({ error: 'KV 存储删除失败' }, 500)
+    }
 
     return c.json({ message: '短链删除成功' })
 
   } catch (error) {
-    return c.json({ error: '删除短链失败' }, 500)
+    return c.json({ 
+      error: '删除短链失败', 
+      details: error instanceof Error ? error.message : '未知错误' 
+    }, 500)
   }
 })
 

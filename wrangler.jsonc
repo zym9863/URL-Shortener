@@ -6,8 +6,8 @@
   "kv_namespaces": [
     {
       "binding": "URL_STORE",
-      "preview_id": "url-shortener-preview",
-      "id": "url-shortener-production"
+      "preview_id": "6c0db4c391c541469102b44762215d4a",
+      "id": "cdbf042da38a46499fc511d5c8c99105"
     }
   ],
   // "r2_buckets": [
